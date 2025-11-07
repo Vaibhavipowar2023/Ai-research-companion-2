@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>AI Research Companion</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="static/style.css" />
 </head>
 <body>
   <div class="container">
@@ -25,7 +25,6 @@
 
       <button id="analyzeBtn">Analyze</button>
 
-      <!-- Loading Animation -->
       <div id="loading" class="loading hidden">
         <div class="spinner"></div>
         <p>Analyzing your topic...</p>
@@ -57,6 +56,9 @@
   </div>
 
   <script>
+    // ✅ Change this URL to your real backend URL on Render
+    const BACKEND_URL = "https://ai-research-companion-backend.onrender.com";
+
     function updateSlider(val) {
       document.getElementById("sliderValue").textContent = val;
     }
@@ -73,7 +75,7 @@
       loading.classList.remove("hidden");
 
       try {
-        const res = await fetch(`/analyze?topic=${encodeURIComponent(topic)}&top_k=${topK}`);
+        const res = await fetch(`${BACKEND_URL}/analyze?topic=${encodeURIComponent(topic)}&top_k=${topK}`);
         if (!res.ok) throw new Error("Backend error");
         const data = await res.json();
 
@@ -127,17 +129,12 @@
         // --- Research Plan ---
         const planDiv = document.getElementById("plan");
         let formatted = data.plan;
-
-        // Convert markdown headers like ### to bold
         formatted = formatted
           .replace(/^###\s*(.+)$/gm, "<strong>$1</strong>")
           .replace(/^####\s*(.+)$/gm, "<strong>$1</strong>");
-
-        // Create collapsible plan
         const lines = formatted.split(/\n+/);
         let html = "";
         let stepCount = 0;
-
         lines.forEach(line => {
           const stepMatch = line.match(/^(\*\*|)?\s*Step\s*\d+[:.]?\s*(.+)/i);
           if (stepMatch) {
@@ -156,7 +153,6 @@
         loading.classList.add("hidden");
         results.classList.remove("hidden");
         results.scrollIntoView({ behavior: "smooth" });
-
       } catch (err) {
         alert("Error: " + err.message);
         console.error(err);
