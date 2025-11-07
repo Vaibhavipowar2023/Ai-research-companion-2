@@ -1,0 +1,30 @@
+<<<<<<< HEAD
+fastapi
+uvicorn
+openai>=1.2.0
+requests
+xmltodict
+sentence-transformers
+scikit-learn
+transformers
+numpy
+pandas
+python-dotenv
+nltk
+jinja2
+gunicorn
+=======
+
+streamlit
+requests
+lxml
+xmltodict
+sentence-transformers
+transformers
+scikit-learn
+numpy
+pandas
+nltk
+openai
+python-dotenv
+>>>>>>> 42288e2cc43c10d18097e79eb67f8ee9f41827d6
