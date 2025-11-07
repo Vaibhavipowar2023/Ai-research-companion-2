@@ -17,23 +17,23 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Initialize FastAPI app
 app = FastAPI(title="AI Research Companion")
 
-# CORS so your Vercel frontend can call this backend
+# Allow cross-origin requests (so frontend on Vercel can access)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # You can restrict this later to your frontend domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )
 
-# Root route — simple health check
+# Root route - health check
 @app.get("/")
 def home():
     return {"message": "AI Research Companion backend is running"}
 
-# Analyze endpoint
+# Main analyze route
 @app.get("/analyze", response_class=JSONResponse)
-def analyze(topic: str = Query(...), top_k: int = Query(3, ge=1, le=8)):
+def analyze(topic: str, top_k: int = 3):
     if not OPENAI_API_KEY:
         return JSONResponse({"error": "Missing OPENAI_API_KEY"}, status_code=400)
 
