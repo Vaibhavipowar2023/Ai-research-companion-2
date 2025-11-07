@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Research Companion</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AI Research Companion</h1>
+      <p class="subtitle">Find, summarize, and plan research smarter — powered by AI</p>
+    </header>
+
+    <!-- Input Section -->
+    <section class="input-card">
+      <label for="topic">Enter your research topic:</label>
+      <input type="text" id="topic" placeholder="e.g., Artificial Intelligence in Education" />
+
+      <div class="slider-row">
+        <label for="top_k">Number of top papers:</label>
+        <input type="range" id="top_k" min="2" max="8" value="3" oninput="updateSlider(this.value)" />
+        <span id="sliderValue">3</span>
+      </div>
+
+      <button id="analyzeBtn">Analyze</button>
+
+      <!-- Loading Animation -->
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Analyzing your topic...</p>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results" class="results hidden">
+      <div class="card fade">
+        <h2>Top Papers</h2>
+        <ul id="papersList"></ul>
+      </div>
+
+      <div class="card fade">
+        <h2>Summaries</h2>
+        <div id="summaries"></div>
+      </div>
+
+      <div class="card fade">
+        <h2>Insights</h2>
+        <div id="insights"></div>
+      </div>
+
+      <div class="card fade">
+        <h2>Research Plan</h2>
+        <div id="plan"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function updateSlider(val) {
+      document.getElementById("sliderValue").textContent = val;
+    }
+
+    document.getElementById("analyzeBtn").addEventListener("click", async () => {
+      const topic = document.getElementById("topic").value.trim();
+      const topK = document.getElementById("top_k").value;
+      const results = document.getElementById("results");
+      const loading = document.getElementById("loading");
+
+      if (!topic) return alert("Please enter a research topic.");
+
+      results.classList.add("hidden");
+      loading.classList.remove("hidden");
+
+      try {
+        const res = await fetch(`/analyze?topic=${encodeURIComponent(topic)}&top_k=${topK}`);
+        if (!res.ok) throw new Error("Backend error");
+        const data = await res.json();
+
+        // --- Top Papers ---
+        const papersList = document.getElementById("papersList");
+        papersList.innerHTML = "";
+        data.papers.forEach(p => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <a href="${p.url || "#"}" target="_blank">${p.title}</a>
+            <span class="source">(${p.source || "Unknown"})</span>`;
+          papersList.appendChild(li);
+        });
+
+        // --- Summaries ---
+        const summariesDiv = document.getElementById("summaries");
+        summariesDiv.innerHTML = "";
+        data.summaries.forEach((s, i) => {
+          const paper = data.papers[i] || {};
+          const title = paper.title || `Paper ${i + 1}`;
+          summariesDiv.innerHTML += `
+            <details>
+              <summary>${title}</summary>
+              <p>${s.abstractive || s.extractive}</p>
+              <a href="${paper.url || "#"}" target="_blank" class="read-link">Read full paper</a>
+            </details>`;
+        });
+
+        // --- Insights ---
+        const insightsDiv = document.getElementById("insights");
+        insightsDiv.innerHTML = "";
+        try {
+          const raw = data.insights.raw || data.insights;
+          const parsed = JSON.parse(String(raw).replace(/```json|```/g, "").trim());
+          Object.entries(parsed).forEach(([section, list]) => {
+            const sectionDiv = document.createElement("div");
+            sectionDiv.innerHTML = `<h4>${section.charAt(0).toUpperCase() + section.slice(1)}:</h4>`;
+            const ul = document.createElement("ul");
+            list.forEach(item => {
+              const li = document.createElement("li");
+              li.textContent = item;
+              ul.appendChild(li);
+            });
+            sectionDiv.appendChild(ul);
+            insightsDiv.appendChild(sectionDiv);
+          });
+        } catch {
+          insightsDiv.textContent = JSON.stringify(data.insights, null, 2);
+        }
+
+        // --- Research Plan ---
+        const planDiv = document.getElementById("plan");
+        let formatted = data.plan;
+
+        // Convert markdown headers like ### to bold
+        formatted = formatted
+          .replace(/^###\s*(.+)$/gm, "<strong>$1</strong>")
+          .replace(/^####\s*(.+)$/gm, "<strong>$1</strong>");
+
+        // Create collapsible plan
+        const lines = formatted.split(/\n+/);
+        let html = "";
+        let stepCount = 0;
+
+        lines.forEach(line => {
+          const stepMatch = line.match(/^(\*\*|)?\s*Step\s*\d+[:.]?\s*(.+)/i);
+          if (stepMatch) {
+            if (stepCount > 0) html += "</div></details>";
+            html += `<details><summary><strong>${stepMatch[2]}</strong></summary><div class="step-content">`;
+            stepCount++;
+          } else if (/^- /.test(line.trim())) {
+            html += `<li>${line.replace(/^- /, "").trim()}</li>`;
+          } else if (line.trim()) {
+            html += `<p>${line.trim()}</p>`;
+          }
+        });
+        if (stepCount > 0) html += "</div></details>";
+        planDiv.innerHTML = html;
+
+        loading.classList.add("hidden");
+        results.classList.remove("hidden");
+        results.scrollIntoView({ behavior: "smooth" });
+
+      } catch (err) {
+        alert("Error: " + err.message);
+        console.error(err);
+        loading.classList.add("hidden");
+      }
+    });
+  </script>
+</body>
+</html>
