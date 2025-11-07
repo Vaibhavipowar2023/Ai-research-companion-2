@@ -1,0 +1,17 @@
+# Ignore environment variables
+.env
+
+# Ignore virtual environment
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code and IDE settings
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
