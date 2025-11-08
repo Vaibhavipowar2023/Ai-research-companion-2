@@ -5,7 +5,8 @@ from functools import lru_cache
 
 @lru_cache(maxsize=1)
 def _embedder():
-    return SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    return SentenceTransformer("sentence-transformers/paraphrase-MiniLM-L3-v2")
+
 
 def rank_papers_by_query(query: str, papers: list, top_k: int = 4) -> list:
     texts = [(p.get("abstract","") or "") for p in papers]
