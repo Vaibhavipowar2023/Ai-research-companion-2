@@ -3,8 +3,8 @@ services:
     name: ai-research-companion-2
     env: python
     region: oregon
-    rootDir: backend
     plan: free
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn api.main:app --host 0.0.0.0 --port 8000
     envVars:
