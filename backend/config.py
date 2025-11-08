@@ -11,7 +11,7 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 # Retrieval & Database settings
 ARXIV_MAX_RESULTS = int(os.getenv("ARXIV_MAX_RESULTS", "25"))
 PUBMED_MAX_RESULTS = int(os.getenv("PUBMED_MAX_RESULTS", "25"))
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-MiniLM-L3-v2")
 
 SQLITE_PATH = os.getenv("SQLITE_PATH", "data/research_memory.db")
 dir_path = os.path.dirname(SQLITE_PATH)
