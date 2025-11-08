@@ -1,15 +1,13 @@
 import os
 import json
 import time
-import concurrent.futures
-from utils.api_utils import fetch_arxiv, fetch_pubmed
+from utils.api_utils import fetch_arxiv  # keep only arXiv
 from utils.nlp_utils import rank_papers_by_query
-from config import ARXIV_MAX_RESULTS, PUBMED_MAX_RESULTS
+from config import ARXIV_MAX_RESULTS
 
-# Local cache to avoid re-fetching same topic
+# Cache directory
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
-
 
 def _cache_get(key):
     path = os.path.join(CACHE_DIR, f"{key}.json")
@@ -21,7 +19,6 @@ def _cache_get(key):
             pass
     return None
 
-
 def _cache_set(key, data):
     path = os.path.join(CACHE_DIR, f"{key}.json")
     try:
@@ -30,27 +27,10 @@ def _cache_set(key, data):
     except Exception:
         pass
 
-
-def _fetch_arxiv_safe(query):
-    try:
-        return fetch_arxiv(query, max_results=min(ARXIV_MAX_RESULTS, 10))
-    except Exception as e:
-        print(f"[Retriever] arXiv fetch failed: {e}")
-        return []
-
-
-def _fetch_pubmed_safe(query):
-    try:
-        return fetch_pubmed(query, retmax=min(PUBMED_MAX_RESULTS, 10))
-    except Exception as e:
-        print(f"[Retriever] PubMed fetch failed: {e}")
-        return []
-
-
 def retrieve_papers(query: str, top_k: int = 4):
     """
-    Fast paper retriever with parallel fetching and caching.
-    Fetches from arXiv + PubMed concurrently, then ranks results.
+    Lightweight paper retriever (arXiv only, cached).
+    Optimized for low memory environments like Render free tier.
     """
     start = time.time()
     key = query.replace(" ", "_").lower()
@@ -60,19 +40,17 @@ def retrieve_papers(query: str, top_k: int = 4):
         print(f"[Retriever] Cache hit for '{query}'")
         return cached[:top_k]
 
-    # Fetch arXiv + PubMed concurrently
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        f1 = pool.submit(_fetch_arxiv_safe, query)
-        f2 = pool.submit(_fetch_pubmed_safe, query)
-        arx = f1.result(timeout=30)
-        pub = f2.result(timeout=30)
+    try:
+        arx = fetch_arxiv(query, max_results=min(ARXIV_MAX_RESULTS, 5))
+    except Exception as e:
+        print(f"[Retriever] arXiv fetch failed: {e}")
+        arx = []
 
-    combined = (arx or []) + (pub or [])
-    if not combined:
+    if not arx:
         print(f"[Retriever] No results for '{query}'")
         return []
 
-    ranked = rank_papers_by_query(query, combined, top_k=top_k)
+    ranked = rank_papers_by_query(query, arx, top_k=top_k)
 
     simple = []
     for p in ranked:
